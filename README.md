@@ -57,3 +57,10 @@ docker pull codalab/default-gpu
 
 ## Usage
 Standard task training for CUB can be ran using the `scripts/experiments.sh` and Codalab scripts can be ran using `scripts/codalab_experiments.sh`. More information about how to perform data processing and other evaluations can be found in the README in `CUB/`.
+
+
+
+
+
+
+ignored env: en-core-web-sm==2.1.0
