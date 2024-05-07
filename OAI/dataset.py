@@ -107,8 +107,12 @@ class PytorchImagesDataset(Dataset):
             image = self.cache.get(new_idx)
             cache_hit = image is not None
         if not self.cache or not cache_hit:
-            image_path = os.path.join(self.base_dir_for_images, 'image_%i.npz' % new_idx)
-            image = self.load_image(image_path)
+            #traverse over the subdirs of base dir for the image.
+            for base_dir in self.base_dir_for_images:
+                image_path = os.path.join(base_dir, 'image_%i.npz' % new_idx)
+                if os.path.exists(image_path):
+                    image = self.load_image(image_path)
+                    break
 
         # ----- Data augmentation -----
         if self.transform == 'random_translation':
@@ -119,7 +123,7 @@ class PytorchImagesDataset(Dataset):
         if self.downsample_fraction:
             image = downsample_image(image, self.downsample_fraction)
 
-        image = np.tile(image, [3, 1, 1])
+        # image = np.tile(image, [3, 1, 1])
 
         # ----- Data processing -----
         if self.C_cols:
@@ -144,10 +148,14 @@ class PytorchImagesDataset(Dataset):
 def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
                         transform_statistics=None, merge_klg_01=True, truncate_C_floats=True,
                         shuffle_Cs=False, return_CY_only=False, check=True, verbose=True):
-    base_dir_for_images = get_base_dir_for_individual_image(dataset_split)
-    image_codes = pickle.load(open(os.path.join(base_dir_for_images, IMG_CODES_FILENAME), 'rb'))
-    non_image_data = pd.read_csv(os.path.join(base_dir_for_images, NON_IMG_DATA_FILENAME), index_col=0)
-    if check: ensure_barcodes_match(non_image_data, image_codes)
+    base_dirs_for_images = get_base_dir_for_individual_image(dataset_split)
+    non_image_data = pd.DataFrame()
+    for base_dir in base_dirs_for_images:
+        image_codes = pickle.load(open(os.path.join(base_dir, IMG_CODES_FILENAME), 'rb'))
+        curr_data = pd.read_csv(os.path.join(base_dir, NON_IMG_DATA_FILENAME), index_col=0)
+        if check: 
+            ensure_barcodes_match(curr_data, image_codes)
+        non_image_data = pd.concat([non_image_data, curr_data], axis=0)
 
     # Clip xrattl from [0,3] to [0,2]. Basically only for the 2 examples with Class = 3
     # which do not appear in train dataset
@@ -235,7 +243,7 @@ def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
             C_feats = copy.deepcopy(non_image_data[C_cols].values)
         return C_feats, y_feats
 
-    return base_dir_for_images, non_image_data, new_transform_statistics
+    return base_dirs_for_images, non_image_data, new_transform_statistics
 
 def load_attributes(image_codes, non_image_data, all_cols, y_cols, merge_klg_01=False, zscore_C=False, zscore_Y=False):
     C_feats = copy.deepcopy(non_image_data[all_cols].values)
@@ -353,39 +361,41 @@ def get_sampling_weights(sampling_strategy, sampling_args, train_dataset, C_cols
 def get_image_cache_for_split(dataset_split, limit=None):
     print('Building image cache for %s split' % dataset_split)
     cache = {}
-    base_dir_for_images = get_base_dir_for_individual_image(dataset_split)
-    non_image_data = pd.read_csv(os.path.join(base_dir_for_images, NON_IMG_DATA_FILENAME), index_col=0)
-    N = len(non_image_data) if limit is None else min(int(limit), len(non_image_data))
+    base_dirs_for_images = get_base_dir_for_individual_image(dataset_split)
+    for base_dir in base_dirs_for_images:
+        non_image_data = pd.read_csv(os.path.join(base_dir, NON_IMG_DATA_FILENAME), index_col=0)
+        N = len(non_image_data) if limit is None else min(int(limit), len(non_image_data))
 
-    num_workers = 8
-    def get_images(ids_group, result):
-        for idx in ids_group:
-            image_path = os.path.join(base_dir_for_images, 'image_%i.npz' % idx)
-            image = np.load(image_path)['arr_0']
-            result[idx] = image
+        num_workers = 8
+        def get_images(ids_group, result):
+            for idx in ids_group:
+                image_path = os.path.join(base_dir, 'image_%i.npz' % idx)
+                image = np.load(image_path)['arr_0']
+                result[idx] = image
 
-    rounds = 20 # Split into multiple rounds to pass smaller sized data
-    import threading
+        rounds = 4 # Split into multiple rounds to pass smaller sized data
+        #changing this to 4 to keep the rounds = 20 in original.. Now data comes in 5 splits.
+        import threading
 
-    ids_groups_list = np.array_split(range(N), num_workers * rounds)
-    for round in range(rounds):
-        print('  Iter %d/%d' % (round + 1, rounds))
-        ids_groups = ids_groups_list[round * num_workers:(round + 1) * num_workers]
+        ids_groups_list = np.array_split(range(N), num_workers * rounds)
+        for round in range(rounds):
+            print('  Iter %d/%d' % (round + 1, rounds))
+            ids_groups = ids_groups_list[round * num_workers:(round + 1) * num_workers]
 
-        results = []
-        threads = []
-        for i, ids_group in enumerate(ids_groups):
-            result = {}
-            t = threading.Thread(target=get_images, args=(ids_group, result))
-            t.start()
-            threads.append(t)
-            results.append(result)
+            results = []
+            threads = []
+            for i, ids_group in enumerate(ids_groups):
+                result = {}
+                t = threading.Thread(target=get_images, args=(ids_group, result))
+                t.start()
+                threads.append(t)
+                results.append(result)
 
-        for i, t in enumerate(threads):
-            t.join()
+            for i, t in enumerate(threads):
+                t.join()
 
-        for i, result in enumerate(results):
-            cache.update(result)
+            for i, result in enumerate(results):
+                cache.update(result)
 
     return cache
 
@@ -478,8 +488,10 @@ def get_base_dir_for_individual_image(dataset_split):
     Get the path for an image.
     """
     assert dataset_split in ['train', 'val', 'test']
-    base_dir = IMG_DIR_PATH % dataset_split
-    return base_dir
+    base_dirs = []
+    for sub_dir in os.listdir(IMG_DIR_PATH):
+        base_dirs.append(IMG_DIR_PATH % (sub_dir, dataset_split))
+    return base_dirs
 
 def ensure_barcodes_match(combined_df, image_codes):
     """
