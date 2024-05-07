@@ -1,6 +1,6 @@
 
 # Global dependencies
-from OAI.config import IMG_DIR_PATH, CLINICAL_CONTROL_COLUMNS, IMG_CODES_FILENAME, NON_IMG_DATA_FILENAME, \
+from OAI.config import IMG_BASE_DIR, CLINICAL_CONTROL_COLUMNS, IMG_CODES_FILENAME, NON_IMG_DATA_FILENAME, \
     N_DATALOADER_WORKERS, CACHE_LIMIT
 
 import os
@@ -489,8 +489,8 @@ def get_base_dir_for_individual_image(dataset_split):
     """
     assert dataset_split in ['train', 'val', 'test']
     base_dirs = []
-    for sub_dir in os.listdir(IMG_DIR_PATH):
-        base_dirs.append(IMG_DIR_PATH % (sub_dir, dataset_split))
+    for sub_dir in os.listdir(IMG_BASE_DIR):
+        base_dirs.append(IMG_BASE_DIR, sub_dir, dataset_split, 'show_both_knees_True_downsample_factor_None_normalization_method_our_statistics')
     return base_dirs
 
 def ensure_barcodes_match(combined_df, image_codes):
