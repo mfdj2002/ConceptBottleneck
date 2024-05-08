@@ -149,13 +149,23 @@ def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
                         transform_statistics=None, merge_klg_01=True, truncate_C_floats=True,
                         shuffle_Cs=False, return_CY_only=False, check=True, verbose=True):
     base_dirs_for_images = get_base_dir_for_individual_image(dataset_split)
-    non_image_data = pd.DataFrame()
+    # non_image_data = pd.DataFrame()
+    # for base_dir in base_dirs_for_images:
+    #     image_codes = pickle.load(open(os.path.join(base_dir, IMG_CODES_FILENAME), 'rb'))
+    #     curr_data = pd.read_csv(os.path.join(base_dir, NON_IMG_DATA_FILENAME), index_col=0)
+    #     if check: 
+    #         ensure_barcodes_match(curr_data, image_codes)
+    #     non_image_data = pd.concat([non_image_data, curr_data], axis=0)
+    non_image_data = []
+
     for base_dir in base_dirs_for_images:
         image_codes = pickle.load(open(os.path.join(base_dir, IMG_CODES_FILENAME), 'rb'))
         curr_data = pd.read_csv(os.path.join(base_dir, NON_IMG_DATA_FILENAME), index_col=0)
-        if check: 
+        if check:
             ensure_barcodes_match(curr_data, image_codes)
-        non_image_data = pd.concat([non_image_data, curr_data], axis=0)
+        non_image_data.append(curr_data)
+
+    non_image_data = pd.concat(non_image_data, axis=0)
 
     # Clip xrattl from [0,3] to [0,2]. Basically only for the 2 examples with Class = 3
     # which do not appear in train dataset

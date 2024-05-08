@@ -134,6 +134,8 @@ class DeepLearningModel(nn.Module):
             # Loss statistics
             running_loss += loss.data.item() * labels[list(labels.keys())[0]].size(0)
 
+            # torch.cuda.empty_cache()
+
         epoch_loss = running_loss / dataset_sizes[phase]
 
         info = {
@@ -191,6 +193,8 @@ class DeepLearningModel(nn.Module):
             if self.verbose['layer_magnitudes']:
                 print('\n\n***\nPrinting layer magnitudes')
                 self.print_layer_magnitudes(epoch)
+
+            torch.cuda.empty_cache()
 
         all_metrics['final_results'] = metrics_for_epoch
         time_elapsed = time.time() - since
