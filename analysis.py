@@ -155,7 +155,7 @@ def assess_performance(y, yhat, names, prediction_type, prefix, verbose=False):
             })
 
         elif prediction_type == 'multiclass':
-            precision, recall, fbeta, support = precision_recall_fscore_support(y_i, yhat_i)
+            precision, recall, fbeta, support = precision_recall_fscore_support(y_i, yhat_i, zero_division = "ignore")
             metrics.update({
                 prefix_name+'precision': precision,
                 prefix_name+'recall': recall,
