@@ -29,6 +29,7 @@ from OAI.dataset import load_non_image_data, load_data_from_different_splits, Py
 # ----------------- Training Experiments -----------------
 def train_X_to_C(args, dataset_kwargs, model_kwargs):
 
+    print(f"dataset kwargs: {dataset_kwargs}")
     dataloaders, datasets, dataset_sizes = load_data_from_different_splits(**dataset_kwargs)
 
     # ---- Model fitting ----

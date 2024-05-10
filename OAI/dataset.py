@@ -113,6 +113,8 @@ class PytorchImagesDataset(Dataset):
                 if os.path.exists(image_path):
                     image = self.load_image(image_path)
                     break
+        if not image:
+            return None
 
         # ----- Data augmentation -----
         if self.transform == 'random_translation':
@@ -135,6 +137,7 @@ class PytorchImagesDataset(Dataset):
         y_feats = self.y_feats[new_idx]
         assert ~any(np.isnan(y_feats))
 
+        print(f"C in dataset, should be z-scored: {C_feats}")
         sample = {'image': image,
                   'C_feats': C_feats,  # C_cols that are Z-scored
                   'C_feats_not_nan': C_feats_not_nan,  # C_cols that are Z-scored but not nan
@@ -156,6 +159,7 @@ def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
     #     if check: 
     #         ensure_barcodes_match(curr_data, image_codes)
     #     non_image_data = pd.concat([non_image_data, curr_data], axis=0)
+    pd.options.mode.chained_assignment = None
     non_image_data = []
 
     for base_dir in base_dirs_for_images:
@@ -166,7 +170,19 @@ def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
         non_image_data.append(curr_data)
 
     non_image_data = pd.concat(non_image_data, axis=0)
+    # Set the maximum number of rows to display
+    pd.set_option('display.max_rows', None)
 
+    # Set the maximum number of columns to display
+    pd.set_option('display.max_columns', None)
+
+    # Set the maximum width of the display
+    pd.set_option('display.width', None)
+
+    # Optionally, you can set the maximum number of characters per column
+    pd.set_option('display.max_colwidth', None)
+    
+    #print(f"non_image_data head: {non_image_data.head(5)}")
     # Clip xrattl from [0,3] to [0,2]. Basically only for the 2 examples with Class = 3
     # which do not appear in train dataset
     if verbose: print('Truncating xrattl')
@@ -245,6 +261,7 @@ def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
             non_image_data['%s_original' % C_cols[i]] = C_feats[:, i]
             non_image_data[C_cols[i]] = (C_feats[:, i] - mu) / std
             C_feats[:, i] = non_image_data[C_cols[i]]
+            print(f"in dataset init, non_image_data[C_cols[i]] for col {C_cols[i]}: {non_image_data[C_cols[i]]}")
 
     if return_CY_only:
         if y_feats is None:

@@ -133,6 +133,8 @@ def assess_performance(y, yhat, names, prediction_type, prefix, verbose=False):
     assert y.shape == yhat.shape, print('(%s) y: %s, yhat: %s' % (prefix, str(y.shape), str(yhat.shape)) )
     assert y.shape[1] == len(names), print('%s) y: %s, len(names): %d' % (prefix, str(y.shape), len(names)) )
 
+    print(f"y in analysis: {y}")
+    print(f"yhat in analysis: {yhat}")
     metrics = {}
     for i, name in enumerate(names):
         # This is to give each variable a unique key in the metrics dict
@@ -140,6 +142,8 @@ def assess_performance(y, yhat, names, prediction_type, prefix, verbose=False):
         # y and yhat can be (N,D), we analyse col by col
         y_i = y[:,i]
         yhat_i = yhat[:,i]
+        #print(f"y_i: {y_i}")
+        #print(f"yhat_i: {yhat_i}")
 
         if prediction_type == 'binary':
             assert set(np.unique(y_i)) == {0, 1}
@@ -155,7 +159,7 @@ def assess_performance(y, yhat, names, prediction_type, prefix, verbose=False):
             })
 
         elif prediction_type == 'multiclass':
-            precision, recall, fbeta, support = precision_recall_fscore_support(y_i, yhat_i, zero_division = "ignore")
+            precision, recall, fbeta, support = precision_recall_fscore_support(y_i, yhat_i, zero_division = 0.0)
             metrics.update({
                 prefix_name+'precision': precision,
                 prefix_name+'recall': recall,
@@ -182,7 +186,7 @@ def assess_performance(y, yhat, names, prediction_type, prefix, verbose=False):
             # Continuous ordinal means that the class is categorical & ordinal in nature but represented as continuous
             if prediction_type == 'continuous_ordinal':
                 yhat_round_i, cat_y_i = convert_continuous_back_to_ordinal(y_i, yhat_i, use_integer_bins=True)
-                precision, recall, fbeta, support = precision_recall_fscore_support(cat_y_i, yhat_round_i)
+                precision, recall, fbeta, support = precision_recall_fscore_support(cat_y_i, yhat_round_i, zero_division = 0.0)
 
                 metrics.update({
                     prefix_name+'precision': precision,

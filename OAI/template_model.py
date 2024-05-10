@@ -63,6 +63,7 @@ class DeepLearningModel(nn.Module):
         time_backward_prop = 0
         time_update_step = 0
 
+        skipped_iterations = 0
         # Iterate over data.
         # keep track of all labels + outputs to compute the final metrics.
         concatenated_labels = {}
@@ -70,6 +71,9 @@ class DeepLearningModel(nn.Module):
         loss_details = []
         for data in dataloaders[phase]:
             # print("We reached the beginning of the loop with %i images" % n_batches_loaded)
+            if any(sample is None for sample in data):
+                skipped_iterations += 1
+                continue
             t = time.time()
             n_batches_loaded += 1
             if n_batches_loaded % 100 == 0:
@@ -97,6 +101,9 @@ class DeepLearningModel(nn.Module):
             data_dict = self.get_data_dict_from_dataloader(data)
             inputs = data_dict['inputs']
             labels = data_dict['labels']
+            #print(inputs)
+            #print(labels)
+            #print(inputs
             time_data_loading += time.time() - t
             t = time.time()
 
@@ -144,6 +151,7 @@ class DeepLearningModel(nn.Module):
             'epoch_loss': epoch_loss,
             'loss_details': loss_details,
         }
+        print(f"skipped iterations in {phase}: {skipped_iterations}")
         metrics_for_epoch = self.analyse_predictions(concatenated_labels, concatenated_outputs, info)
         return metrics_for_epoch
 
