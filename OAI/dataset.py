@@ -75,30 +75,13 @@ class PytorchImagesDataset(Dataset):
             self.transform_statistics = data_transform_statistics
 
         # Select subset of ids if we are only using a proportion of data
-        # N = len(self.non_image_data)
-        # if self.data_proportion < 1.:
-        #     N_selected = int(data_proportion * N)
-        #     selected_ids = np.random.choice(N, N_selected, replace=False)
-        #     self.selected_ids = selected_ids
-        # else:
-        #     self.selected_ids = np.arange(N)
-        import re
-
-        def extract_last_number(string):
-            pattern = r'\d+(?=\D*$)'
-            match = re.search(pattern, string)
-            if match:
-                return match.group()
-            else:
-                return None
-
-        self.f_idxs = []
-        #for testing purposes
-        for path in os.listdir(IMG_DIR_PATH % dataset):
-            if path.endswith('.npy'):
-                self.f_idxs.append(int(extract_last_number(path)))
-        
-        self.f_idxs_iter = iter(self.f_idxs)
+        N = len(self.non_image_data)
+        if self.data_proportion < 1.:
+            N_selected = int(data_proportion * N)
+            selected_ids = np.random.choice(N, N_selected, replace=False)
+            self.selected_ids = selected_ids
+        else:
+            self.selected_ids = np.arange(N)
 
         if C_hat_path:
             # Attribute prediction available from previous model
@@ -107,16 +90,16 @@ class PytorchImagesDataset(Dataset):
         if len(C_cols) > 0:
             # print(f"C cols: {C_cols}")
             self.C_feats = copy.deepcopy(self.non_image_data[C_cols].values)
-            print(f"C_feats length total: {len(self.C_feats)}, C_feats length each: {len(self.C_feats[0])}")
+            # print(f"C_feats length total: {len(self.C_feats)}, C_feats length each: {len(self.C_feats[0])}")
 
             # This is the weight given to EACH class WITHIN EACH attribute in order to correct the imbalance.
             variables = [C_col + '_loss_class_wt' for C_col in C_cols]
             # print(f"variables: {variables}")
             self.C_feats_loss_class_wts = copy.deepcopy(self.non_image_data[variables].values)
-            print(f'C feats loss cls wts length total: {len(self.C_feats_loss_class_wts)}, C feats loss cls wts length each: {len(self.C_feats_loss_class_wts[0])}')
+            # print(f'C feats loss cls wts length total: {len(self.C_feats_loss_class_wts)}, C feats loss cls wts length each: {len(self.C_feats_loss_class_wts[0])}')
         # print(f"y_cols: {y_cols}")
         self.y_feats = copy.deepcopy(self.non_image_data[y_cols].values)
-        print(f'y feats length: {self.y_feats}, y feats length each: {self.y_feats[0]}')
+        # print(f'y feats length: {self.y_feats}, y feats length each: {self.y_feats[0]}')
 
         # print('Dataset %s has %i rows' % (dataset, len(self.non_image_data)))
         
@@ -132,19 +115,13 @@ class PytorchImagesDataset(Dataset):
         return len(self.f_idxs)
 
     def __getitem__(self, idx):
-        # new_idx = self.selected_ids[idx]
-        # if self.cache:
-        #     image = self.cache.get(new_idx)
-        #     cache_hit = image is not None
-        # if not self.cache or not cache_hit:
-        #     image_path = os.path.join(self.base_dir_for_images, 'image_%i.npz' % new_idx)
-        #     image = self.load_image(image_path)
-
-        #for testing purposes:
-        new_idx = next(self.f_idxs_iter)
-        image_path = os.path.join(self.base_dir_for_images, 'image_%i.npy' % new_idx)
-        image = self.load_image(image_path)
-
+        new_idx = self.selected_ids[idx]
+        if self.cache:
+            image = self.cache.get(new_idx)
+            cache_hit = image is not None
+        if not self.cache or not cache_hit:
+            image_path = os.path.join(self.base_dir_for_images, 'image_%i.npz' % new_idx)
+            image = self.load_image(image_path)
 
         # ----- Data augmentation -----
         if self.transform == 'random_translation':
@@ -159,26 +136,16 @@ class PytorchImagesDataset(Dataset):
 
         # ----- Data processing -----
 
-        #for testing purposes:
-        # new_idx = self.f_idxs[idx]
 
-
-
-        # if self.C_cols:
-        #     C_feats = self.C_feats[new_idx, :]
-        #     C_feats_loss_class_wts = self.C_feats_loss_class_wts[new_idx]
-        #     C_feats_not_nan = ~np.isnan(C_feats)
-        #     C_feats[~C_feats_not_nan] = 0
-        #     C_feats_not_nan = C_feats_not_nan * 1.
-        # y_feats = self.y_feats[new_idx]
-        # assert ~any(np.isnan(y_feats))
-
-        # for testing purposes:
         if self.C_cols:
-            C_feats = torch.from_numpy(np.random.normal(loc=0, scale=1, size=10))
-            C_feats_loss_class_wts = torch.tensor([random.random() for _ in np.arange(10)])
-            C_feats_not_nan = torch.tensor([1 for _ in np.arange(10)])
-            y_feats = torch.tensor([float(random.randint(0, 3))])
+            C_feats = self.C_feats[new_idx, :]
+            C_feats_loss_class_wts = self.C_feats_loss_class_wts[new_idx]
+            C_feats_not_nan = ~np.isnan(C_feats)
+            C_feats[~C_feats_not_nan] = 0
+            C_feats_not_nan = C_feats_not_nan * 1.
+        y_feats = self.y_feats[new_idx]
+        assert ~any(np.isnan(y_feats))
+
 
         sample = {'image': image,
                   'C_feats': C_feats,  # C_cols that are Z-scored
@@ -188,18 +155,15 @@ class PytorchImagesDataset(Dataset):
         return sample
 
     def load_image(self, path):
-        #return np.load(path)['arr_0']
-
-        #for testing purposes:
-        return np.load(path)
+        return np.load(path)['arr_0']
 
 def load_non_image_data(dataset_split, C_cols, y_cols, zscore_C, zscore_Y,
                         transform_statistics=None, merge_klg_01=True, truncate_C_floats=True,
-                        shuffle_Cs=False, return_CY_only=False, check=True, verbose=True):
+                        shuffle_Cs=False, return_CY_only=False, check=False, verbose=True):
     base_dir_for_images = get_base_dir_for_individual_image(dataset_split)
-    image_codes = pickle.load(open(os.path.join(base_dir_for_images, IMG_CODES_FILENAME), 'rb'))
+    # image_codes = pickle.load(open(os.path.join(base_dir_for_images, IMG_CODES_FILENAME), 'rb'))
     non_image_data = pd.read_csv(os.path.join(base_dir_for_images, NON_IMG_DATA_FILENAME), index_col=0)
-    if check: ensure_barcodes_match(non_image_data, image_codes)
+    # if check: ensure_barcodes_match(non_image_data, image_codes)
 
     # Clip xrattl from [0,3] to [0,2]. Basically only for the 2 examples with Class = 3
     # which do not appear in train dataset
@@ -413,9 +377,9 @@ def get_image_cache_for_split(dataset_split, limit=None):
     def get_images(ids_group, result):
         for idx in ids_group:
             try: 
-                image = np.load(os.path.join(base_dir_for_images, 'image_%i.npy' % idx))
-                # image_path = os.path.join(base_dir_for_images, 'image_%i.npz' % idx)
-                # image = np.load(image_path)['arr_0']
+                # image = np.load(os.path.join(base_dir_for_images, 'image_%i.npy' % idx))
+                image_path = os.path.join(base_dir_for_images, 'image_%i.npz' % idx)
+                image = np.load(image_path)['arr_0']
                 result[idx] = image
             except Exception:
                 continue
