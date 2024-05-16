@@ -1,4 +1,3 @@
-
 # Global dependencies
 from OAI.config import IMG_DIR_PATH, CLINICAL_CONTROL_COLUMNS, IMG_CODES_FILENAME, NON_IMG_DATA_FILENAME, \
     N_DATALOADER_WORKERS, CACHE_LIMIT
@@ -104,15 +103,15 @@ class PytorchImagesDataset(Dataset):
         # print('Dataset %s has %i rows' % (dataset, len(self.non_image_data)))
         
         #for testing purposes:
-        print('Dataset %s has %i rows' % (dataset, len(self.f_idxs)))
+        #print('Dataset %s has %i rows' % (dataset, len(self.f_idxs)))
 
     def __len__(self):
         # if self.use_small_subset:
         #     return 500
-        # return len(self.selected_ids)
+        return len(self.selected_ids)
 
         #for testing purposes
-        return len(self.f_idxs)
+        #return len(self.f_idxs)
 
     def __getitem__(self, idx):
         new_idx = self.selected_ids[idx]
@@ -430,14 +429,14 @@ def load_data_from_different_splits(batch_size,
     Checked.
     """
     limit = 500 if use_small_subset else CACHE_LIMIT
-    cache_train = get_image_cache_for_split('train', limit=limit)
+    #cache_train = get_image_cache_for_split('train', limit=limit)
     train_dataset = PytorchImagesDataset(dataset='train',
                                          transform_statistics=None,
                                          C_cols=C_cols,
                                          y_cols=y_cols,
                                          zscore_C=zscore_C,
                                          zscore_Y=zscore_Y,
-                                         cache=cache_train,
+                                         cache=None,
                                          truncate_C_floats=True,
                                          data_proportion=data_proportion,
                                          shuffle_Cs=shuffle_Cs,
@@ -452,14 +451,14 @@ def load_data_from_different_splits(batch_size,
                                   num_workers=N_DATALOADER_WORKERS,
                                   sampler=train_sampler, pin_memory=False)
 
-    cache_val = get_image_cache_for_split('val', limit=limit)
+    #cache_val = get_image_cache_for_split('val', limit=limit)
     val_dataset = PytorchImagesDataset(dataset='val',
                                        transform_statistics=train_dataset.transform_statistics,
                                        C_cols=C_cols,
                                        y_cols=y_cols,
                                        zscore_C=zscore_C,
                                        zscore_Y=zscore_Y,
-                                       cache=cache_val,
+                                       cache=None,
                                        truncate_C_floats=True,
                                        data_proportion=data_proportion,
                                        shuffle_Cs=False,
@@ -600,5 +599,3 @@ def downsample_image(image, downsample_fraction):
     new_image = np.array(new_image)
     assert new_image.shape == image.shape
     return new_image
-
-
