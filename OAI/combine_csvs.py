@@ -18,16 +18,38 @@ def main(path):
         if len(dfs) == 0:
             continue
 
+
+        # Combine the DataFrames vertically
+        df_combined = pd.concat(dfs, ignore_index=True)
+
+        # Sort the combined dataframe by 'col1'
+        result_df = df_combined.sort_values('image_number')
+
+        # Reset the index
+        result_df = result_df.reset_index(drop=True)
+
+        # Explode the 'col' column to separate the values
+        # df_combined = df_combined.explode('image_number')
+
+        # # Convert the 'col' column to numeric type
+        # df_combined['image_number'] = pd.to_numeric(df_combined['image_number'])
+
+        # # Sort the combined DataFrame based on the 'col' column
+        # df_sorted = df_combined.sort_values('image_number')
+
+        # Reset the index
+        # df_sorted = df_sorted.reset_index(drop=True)
+
         # Concatenate the DataFrames vertically
-        combined_df = pd.concat(dfs)
+        # combined_df = pd.concat(dfs)
 
-        # Set the 'image_number' column as the index of the combined DataFrame
-        combined_df.set_index('image_number', inplace=True)
+        # # Set the 'image_number' column as the index of the combined DataFrame
+        # combined_df.set_index('image_number', inplace=True)
 
-        # Create a new DataFrame with the desired index
-        new_df = pd.DataFrame(index=combined_df.index)
+        # # Create a new DataFrame with the desired index
+        # new_df = pd.DataFrame(index=combined_df.index)
         print(f"saving to {os.path.join(path, split, 'combined.csv')}")
-        new_df.to_csv(os.path.join(path, split, 'combined.csv'))
+        result_df.to_csv(os.path.join(path, split, 'combined.csv'))
 
 
 if __name__ == '__main__':
