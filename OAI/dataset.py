@@ -408,6 +408,17 @@ def get_image_cache_for_split(dataset_split, limit=None):
 
     return cache
 
+def collate_fn(batch):
+    # Filter out None samples from the batch
+    filtered_batch = list(filter(lambda x: x is not None, batch))
+    
+    if len(filtered_batch) == 0:
+        # If all samples in the batch are None, return None
+        return None
+    
+    # Collate the filtered batch using the default collate function
+    return torch.utils.data.dataloader.default_collate(filtered_batch), len(filtered_batch)
+
 def load_data_from_different_splits(batch_size,
                                     C_cols,
                                     y_cols,
@@ -449,7 +460,7 @@ def load_data_from_different_splits(batch_size,
     train_sampler, shuffle = get_sampling_weights(sampling_strategy, sampling_args, train_dataset, C_cols, y_cols)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle,
                                   num_workers=N_DATALOADER_WORKERS,
-                                  sampler=train_sampler, pin_memory=False)
+                                  sampler=train_sampler, pin_memory=False, collate_fn=collate_fn)
 
     #cache_val = get_image_cache_for_split('val', limit=limit)
     val_dataset = PytorchImagesDataset(dataset='val',
@@ -466,7 +477,7 @@ def load_data_from_different_splits(batch_size,
                                        transform='None',
                                        use_small_subset=use_small_subset,
                                        downsample_fraction=downsample_fraction)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=N_DATALOADER_WORKERS)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=N_DATALOADER_WORKERS, collate_fn=collate_fn)
 
     test_dataset = PytorchImagesDataset(dataset='test',
                                         transform_statistics=train_dataset.transform_statistics,
@@ -481,7 +492,7 @@ def load_data_from_different_splits(batch_size,
                                         transform='None',
                                         use_small_subset=use_small_subset,
                                         downsample_fraction=downsample_fraction)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=N_DATALOADER_WORKERS)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=N_DATALOADER_WORKERS, collate_fn=collate_fn)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader, 'test': test_dataloader}
     datasets = {'train': train_dataset, 'val': val_dataset, 'test': test_dataset}

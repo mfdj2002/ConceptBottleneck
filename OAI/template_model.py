@@ -63,13 +63,21 @@ class DeepLearningModel(nn.Module):
         time_backward_prop = 0
         time_update_step = 0
 
+        samples_consumed = 0
         # Iterate over data.
         # keep track of all labels + outputs to compute the final metrics.
+        
         concatenated_labels = {}
         concatenated_outputs = {}
         loss_details = []
         for data in dataloaders[phase]:
             # print("We reached the beginning of the loop with %i images" % n_batches_loaded)
+            collated_batch, num_valid_samples = data
+            if num_valid_samples == 0:
+                # Skip the batch if all samples are None
+                continue
+            samples_consumed += num_valid_samples
+            data = collated_batch
             t = time.time()
             n_batches_loaded += 1
             if n_batches_loaded % 100 == 0:
@@ -97,6 +105,9 @@ class DeepLearningModel(nn.Module):
             data_dict = self.get_data_dict_from_dataloader(data)
             inputs = data_dict['inputs']
             labels = data_dict['labels']
+            #print(inputs)
+            #print(labels)
+            #print(inputs
             time_data_loading += time.time() - t
             t = time.time()
 
@@ -134,6 +145,8 @@ class DeepLearningModel(nn.Module):
             # Loss statistics
             running_loss += loss.data.item() * labels[list(labels.keys())[0]].size(0)
 
+            # torch.cuda.empty_cache()
+
         epoch_loss = running_loss / dataset_sizes[phase]
 
         info = {
@@ -142,6 +155,7 @@ class DeepLearningModel(nn.Module):
             'epoch_loss': epoch_loss,
             'loss_details': loss_details,
         }
+        print(f"skipped iterations in {phase}: {len(dataloaders[phase]) - samples_consumed}")
         metrics_for_epoch = self.analyse_predictions(concatenated_labels, concatenated_outputs, info)
         return metrics_for_epoch
 
