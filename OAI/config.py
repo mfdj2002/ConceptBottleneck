@@ -9,7 +9,8 @@ BASE_DIR = '/home/jf3516/CBM'
 DATA_DIR = '/local/rcs/jf3516'
 #OUTPUTS_DIR = os.path.join(BASE_DIR, 'outputs')
 OUTPUTS_DIR = "/local/rcs/mt3566/CBM/outputs"
-IMG_DIR_PATH = os.path.join(DATA_DIR, 'processed_data_24/%s/show_both_knees_True_downsample_factor_None_normalization_method_our_statistics')
+#IMG_DIR_PATH = os.path.join(DATA_DIR, 'processed_data_24/%s/show_both_knees_True_downsample_factor_None_normalization_method_our_statistics')
+IMG_DIR_PATH = os.path.join(DATA_DIR, 'processed_data_combined/%s/show_both_knees_True_downsample_factor_None_normalization_method_our_statistics')
 IMG_CODES_FILENAME = 'image_codes.pkl'
 NON_IMG_DATA_FILENAME = 'non_image_data.csv'
 
