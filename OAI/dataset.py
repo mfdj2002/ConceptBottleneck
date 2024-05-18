@@ -100,10 +100,10 @@ class PytorchImagesDataset(Dataset):
         self.y_feats = copy.deepcopy(self.non_image_data[y_cols].values)
         # print(f'y feats length: {self.y_feats}, y feats length each: {self.y_feats[0]}')
 
-        # print('Dataset %s has %i rows' % (dataset, len(self.non_image_data)))
+        #print('Dataset %s is supposed to have %i rows (according to csv)' % (dataset, len(self.non_image_data)))
         
         #for testing purposes:
-        #print('Dataset %s has %i rows' % (dataset, len(self.f_idxs)))
+        print('Dataset %s has %i rows' % (dataset, len(self.selected_ids)))
 
     def __len__(self):
         # if self.use_small_subset:
@@ -115,12 +115,17 @@ class PytorchImagesDataset(Dataset):
 
     def __getitem__(self, idx):
         new_idx = self.selected_ids[idx]
+        #print(f"new idx: {new_idx}, original idx: {idx}")
         if self.cache:
             image = self.cache.get(new_idx)
             cache_hit = image is not None
         if not self.cache or not cache_hit:
-            image_path = os.path.join(self.base_dir_for_images, 'image_%i.npz' % new_idx)
-            image = self.load_image(image_path)
+            try:
+                image_path = os.path.join(self.base_dir_for_images, 'image_%i.npz' % new_idx)
+                image = self.load_image(image_path)
+            except FileNotFoundError:
+                print(f"file {image_path} not found")
+                return None
 
         # ----- Data augmentation -----
         if self.transform == 'random_translation':
@@ -414,7 +419,7 @@ def collate_fn(batch):
     
     if len(filtered_batch) == 0:
         # If all samples in the batch are None, return None
-        return None
+        return None, 0
     
     # Collate the filtered batch using the default collate function
     return torch.utils.data.dataloader.default_collate(filtered_batch), len(filtered_batch)
@@ -448,7 +453,6 @@ def load_data_from_different_splits(batch_size,
                                          zscore_C=zscore_C,
                                          zscore_Y=zscore_Y,
                                          cache=None,
-                                         cache=None,
                                          truncate_C_floats=True,
                                          data_proportion=data_proportion,
                                          shuffle_Cs=shuffle_Cs,
@@ -470,7 +474,6 @@ def load_data_from_different_splits(batch_size,
                                        y_cols=y_cols,
                                        zscore_C=zscore_C,
                                        zscore_Y=zscore_Y,
-                                       cache=None,
                                        cache=None,
                                        truncate_C_floats=True,
                                        data_proportion=data_proportion,

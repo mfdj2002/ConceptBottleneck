@@ -516,8 +516,8 @@ def generate_configs(args):
     # Create output dir
     experiment_name = args.name
     if experiment_name:
-        # experiment_dir = os.path.join(OUTPUTS_DIR, experiment_name)
-        experiment_dir="/local/rcs/mt3566/CBM/outputs/Concept_XtoC"
+        experiment_dir = os.path.join(OUTPUTS_DIR, experiment_name)
+        #experiment_dir="/local/rcs/mt3566/CBM/outputs/Concept_XtoC"
         # assert not os.path.exists(experiment_dir)
         if not os.path.exists(experiment_dir): os.makedirs(experiment_dir)
 
