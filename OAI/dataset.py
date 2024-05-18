@@ -80,8 +80,8 @@ class PytorchImagesDataset(Dataset):
             selected_ids = np.random.choice(N, N_selected, replace=False)
             self.selected_ids = selected_ids
         else:
-            self.selected_ids = np.arange(N)
-
+            #self.selected_ids = np.arange(N)
+            self.selected_ids = self.non_image_data['image_number'].tolist()
         if C_hat_path:
             # Attribute prediction available from previous model
             pass
@@ -142,12 +142,12 @@ class PytorchImagesDataset(Dataset):
 
 
         if self.C_cols:
-            C_feats = self.C_feats[new_idx, :]
-            C_feats_loss_class_wts = self.C_feats_loss_class_wts[new_idx]
+            C_feats = self.C_feats[idx, :]
+            C_feats_loss_class_wts = self.C_feats_loss_class_wts[idx]
             C_feats_not_nan = ~np.isnan(C_feats)
             C_feats[~C_feats_not_nan] = 0
             C_feats_not_nan = C_feats_not_nan * 1.
-        y_feats = self.y_feats[new_idx]
+        y_feats = self.y_feats[idx]
         assert ~any(np.isnan(y_feats))
 
 

@@ -211,18 +211,20 @@ def save_model_results(model, results, args, dataset_kwargs, model_kwargs, exp_n
     print("Saving code, weights, config, and results as: %s" % unique_name)
 
     # Save code
-    src_models_code_dir = os.path.join(BASE_DIR, 'OAI')
-    dest_code_dir = os.path.join(OUTPUTS_DIR, unique_name, 'code')
-    if not os.path.exists(dest_code_dir): os.makedirs(dest_code_dir)
+    #src_models_code_dir = os.path.join(BASE_DIR, 'OAI')
+    #dest_code_dir = os.path.join(OUTPUTS_DIR, unique_name, 'code')
+    #if not os.path.exists(dest_code_dir): os.makedirs(dest_code_dir)
     # Models code
-    for model_code_file in os.listdir(src_models_code_dir):
-        src_file = os.path.join(src_models_code_dir, model_code_file)
-        dest_file = os.path.join(dest_code_dir, model_code_file)
-        os.system('cp %s %s' % (src_file, dest_file))
+    #for model_code_file in os.listdir(src_models_code_dir):
+     #   src_file = os.path.join(src_models_code_dir, model_code_file)
+     #   dest_file = os.path.join(dest_code_dir, model_code_file)
+     #   os.system('cp %s %s' % (src_file, dest_file))
     # Dataset code
-    src_file = os.path.join(BASE_DIR, 'dataset.py')
-    dest_file = os.path.join(dest_code_dir, 'dataset.py')
-    os.system('cp %s %s' % (src_file, dest_file))
+    #src_file = os.path.join(BASE_DIR, 'dataset.py')
+    #dest_file = os.path.join(dest_code_dir, 'dataset.py')
+    #os.system('cp %s %s' % (src_file, dest_file))
+
+    os.makedirs(os.path.join(OUTPUTS_DIR, unique_name), exist_ok=True)
 
     # Save configs
     config = {'dataset_kwargs': dataset_kwargs, 'model_kwargs': model_kwargs, 'experiment_to_run': experiment_to_run}
